@@ -17,5 +17,5 @@
 
 
 ## Authors:
- - Wilfried Klaebe <wk-openmoko@chaos.in-kiel.de>
- - Justus Paulick <justus.paulick@tu-dresden.de>
+ - Wilfried Klaebe <wk-openmoko|at|chaos.in-kiel.de>
+ - Justus Paulick <justus.paulick|at|tu-dresden.de>
