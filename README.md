@@ -2,11 +2,7 @@
 
  v0.5
  
- Authors:
- Wilfried Klaebe <wk-openmoko@chaos.in-kiel.de>
- Justus Paulick <justus.paulick@tu-dresden.de>
-
- Usage:
+## Usage:
 
  python ubxgen.py message_file serial_port
 
@@ -19,3 +15,7 @@
  - prepends 0xb5 0x62 header and appends checksum to every Message (Line)
  - outputs first answer from ublox-reciver in bytes
 
+
+## Authors:
+ - Wilfried Klaebe <wk-openmoko@chaos.in-kiel.de>
+ - Justus Paulick <justus.paulick@tu-dresden.de>
