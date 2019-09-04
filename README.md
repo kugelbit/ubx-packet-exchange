@@ -1,9 +1,10 @@
 # ubx-packet-exchange
 
  v0.5
-
-# Wilfried Klaebe <wk-openmoko@chaos.in-kiel.de>
-# Justus Paulick <justus.paulick@tu-dresden.de>
+ 
+ Authors:
+ Wilfried Klaebe <wk-openmoko@chaos.in-kiel.de>
+ Justus Paulick <justus.paulick@tu-dresden.de>
 
  Usage:
 
