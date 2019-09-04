@@ -8,7 +8,7 @@
 
  Usage:
 
- ubxgen.py message_file serial_port
+ python ubxgen.py message_file serial_port
 
  message file will be read line by line (every line should be a UBX-Message)
  message files could be u-center-configuration files or files like the example files (bytes in ascii only)
