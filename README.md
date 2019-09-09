@@ -1,6 +1,6 @@
 # ubx-packet-exchange
 
- Programm for sending config-messages to a ublox-receiver and display the answere. 
+ Programm for sending config-messages to a ublox-receiver via serial port and display the answere. 
  
 ## Usage:
 ```
