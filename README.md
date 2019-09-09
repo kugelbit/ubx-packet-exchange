@@ -3,9 +3,9 @@
  Programm for sending config-messages to a ublox-receiver and display the answere. 
  
 ## Usage:
-
- python ubxgen.py  message_file  serial_port
-
+```
+ python ubxgen.py  <message_file>  <serial_port>
+```
  - message file will be read line by line (every line should be a UBX-Message)
  - message files could be u-center-configuration files or files like the example files (see config dir)
  - the message will be sent to the UBX receiver and the program waits for an answer
