@@ -92,6 +92,7 @@ with open(sys.argv[1]) as fp:
             else:
                 print("no response was received in timeout")
 
+            time.sleep(1)
             line = fp.readline()
             cnt += 1
 
