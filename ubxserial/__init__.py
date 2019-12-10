@@ -6,9 +6,16 @@
 # Justus Paulick <justus.paulick@tu-dresden.de>
 # Kai Geissdoerfer <kai.geissdoerfer@tu-dresden.de>
 #
-# Usage:
+# Usage: ubx-serial [OPTIONS]
 #
-# ubxgen.py <message file> <serial port>
+#  Writes binary config file [CONFIG] to ublox device at [PORT].
+#
+# Options:
+#  -p, --port PATH    Serial port of device  [required]
+#  -c, --config PATH  Binary config to send to device  [required]
+#  -w, --warn-only    Warn only on read errors
+#  -v, --verbose
+#  --help             Show this message and exit.
 #
 # message file will be read line by line (every line should be a UBX-Message)
 # message files could be u-center-configuration files or files like the example files (bytes in ascii only)
@@ -23,7 +30,7 @@
 import sys
 import binascii
 import time
-import serial
+import serial 
 import re
 import click
 from pathlib import Path
@@ -76,19 +83,19 @@ class UBXStream(object):
         logger.debug(f"Writing {msg} to device")
         self._dev.write(msg)
 
-    def read_pkt(self, timeout: float = 5):
+    def read_pkt(self):
         ts_start = time.time()
         while True:
             if self._dev.read(1) == b"\xb5":
                 if self._dev.read(1) == b"\x62":
                     break
-            if time.time() > ts_start + timeout:
+            if time.time() > ts_start + self._timeout:
                 raise TimeoutError("Timed out waiting for message")
 
         header = self._dev.read(4)
         logger.debug(f"Read header {header} from device")
         if len(header) < 3:
-            raise Exception("Message too short")
+            raise Exception("received Message too short")
 
         msg_class, msg_id = header[:2]
         msg_len = int.from_bytes(header[2:], "little", signed=False)
@@ -114,7 +121,7 @@ class UBXStream(object):
                 f"Checksum mismatch: {msg[-1].to_bytes(1, 'little')}!={cs1}"
             )
 
-        return payload
+        return b"\xb5" + b"\x62" + header + msg
 
 
 @click.command()
@@ -135,8 +142,14 @@ class UBXStream(object):
 @click.option(
     "--warn-only", "-w", is_flag=True, help="Warn only on read errors",
 )
+@click.option(
+    "--timeout", "-t", 
+    type=float, 
+    default=5,
+    help="read timeout in s. default: 5s",
+)
 @click.option("-v", "--verbose", count=True, default=2)
-def write_config(port, config, warn_only, verbose):
+def write_config(port, config, warn_only, timeout, verbose):
     """Writes binary config file [CONFIG] to ublox device at [PORT]."""
 
     if verbose == 0:
@@ -148,9 +161,10 @@ def write_config(port, config, warn_only, verbose):
     elif verbose > 2:
         logger.setLevel(logging.DEBUG)
 
-    with open(config, "r") as fp, UBXStream(port) as ubx:
+    with open(config, "r") as fp, UBXStream(port,9600, timeout) as ubx:
         for i, line in enumerate(fp):
-            cmd = bytes.fromhex(line.strip())
+            cmd = re.findall(r"([A-F][0-9]|[A-F][A-F]|[0-9][A-F]|[0-9][0-9])\s", line)# get ubx cmd
+            cmd = bytes.fromhex(''.join(cmd))
 
             ubx.write(cmd)
             logger.info("Sent message to device")
@@ -160,7 +174,7 @@ def write_config(port, config, warn_only, verbose):
                 reply = ubx.read_pkt()
                 logger.info(f"Response: 0x{reply.hex().upper()}")
             except TimeoutError as e:
-                logger.debug("No reply from device within timeout")
+                logger.error("No reply from device within timeout")
             except Exception as e:
                 if warn_only:
                     logger.warn(f"Exception during reading: {str(e)}")
