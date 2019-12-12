@@ -1,7 +1,7 @@
 # ubx-packet-exchange
 
  Programm for sending config-messages to a ublox-receiver via serial port and display the answere. 
- 
+
 ## Usage:
 ```
  python ubxgen.py  <message_file>  <serial_port>
@@ -19,3 +19,4 @@
 ## Authors:
  - Wilfried Klaebe <wk-openmoko|at|chaos.in-kiel.de>
  - Justus Paulick <justus.paulick|at|tu-dresden.de>
+ - Kai Geissdoerfer <kai.geissdoerfer|at|tu-dresden.de>
