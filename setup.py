@@ -11,7 +11,7 @@ requirements = ["pySerial", "click"]
 
 setup(
     name="ubxserial",
-    version="0.0.1",
+    version="0.0.2",
     description="Python API for sending UBX message to ublox GPS device via serial",
     long_description=README,
     long_description_content_type="text/markdown",
