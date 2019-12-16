@@ -35,7 +35,6 @@ logger.addHandler(consoleHandler)
 
 
 def calc_check_sum(cmd: bytes):
-
     cs0, cs1 = 0, 0
     for byte in cmd:
         cs0 += byte
@@ -44,6 +43,7 @@ def calc_check_sum(cmd: bytes):
     cs0 = (cs0 % 256).to_bytes(1, "little")
     cs1 = (cs1 % 256).to_bytes(1, "little")
 
+    logger.debug(f"Checksum of {cmd} is [{cs0}, {cs1}]")
     return cs0, cs1
 
 
@@ -76,36 +76,43 @@ class UBXStream(object):
         logger.debug(f"Writing {msg} to device")
         self._dev.write(msg)
 
-    def read(self):
-        header = self._dev.read(3)
-        logger.debug(f"Read {header} from device")
+    def read_pkt(self, timeout: float = 5):
+        ts_start = time.time()
+        while True:
+            if self._dev.read(1) == b"\xb5":
+                if self._dev.read(1) == b"\x62":
+                    break
+            if time.time() > ts_start + timeout:
+                raise TimeoutError("Timed out waiting for message")
 
-        if len(header) == 0:
-            return
-        elif len(header) < 3:
+        header = self._dev.read(4)
+        logger.debug(f"Read header {header} from device")
+        if len(header) < 3:
             raise Exception("Message too short")
 
-        if header[0] != 0xB5 or header[1] != 0x62:
-            raise Exception("Invalid header")
+        msg_class, msg_id = header[:2]
+        msg_len = int.from_bytes(header[2:], "little", signed=False)
+        logger.debug(
+            f"Received message with class {msg_class}, ID {msg_id} and length {msg_len} from device"
+        )
 
-        payload_len = header[2]
-        logger.debug(f"Received message with length {payload_len} from device")
+        msg = self._dev.read(msg_len + 2)
+        logger.debug(f"Read msg {msg} from device")
 
-        msg = self._dev.read(payload_len + 2)
-        logger.debug(f"Read {msg} from device")
-
-        if len(msg) != (payload_len + 2):
+        if len(msg) != (msg_len + 2):
             raise Exception("Message length mismatch")
 
-        cs0, cs1 = calc_check_sum(msg[:payload_len])
-        payload = msg[:payload_len]
+        payload = msg[:msg_len]
+        cs0, cs1 = calc_check_sum(header + payload)
 
-        test0 = msg[-2].to_bytes(1, "little") == cs0
-        test1 = msg[-1].to_bytes(1, "little") == cs1
-
-        print(cs0, cs1)
-        if not test0 or not test1:
-            raise Exception("Checksum mismatch")
+        if not msg[-2].to_bytes(1, "little") == cs0:
+            raise Exception(
+                f"Checksum mismatch: {msg[-2].to_bytes(1, 'little')}!={cs0}"
+            )
+        if not msg[-1].to_bytes(1, "little") == cs1:
+            raise Exception(
+                f"Checksum mismatch: {msg[-1].to_bytes(1, 'little')}!={cs1}"
+            )
 
         return payload
 
@@ -146,20 +153,19 @@ def write_config(port, config, warn_only, verbose):
             cmd = bytes.fromhex(line.strip())
 
             ubx.write(cmd)
+            logger.info("Sent message to device")
 
             try:
-                reply = ubx.read()
+                reply = None
+                reply = ubx.read_pkt()
+                logger.info(f"Response: 0x{reply.hex().upper()}")
+            except TimeoutError as e:
+                logger.debug("No reply from device within timeout")
             except Exception as e:
                 if warn_only:
                     logger.warn(f"Exception during reading: {str(e)}")
-                    reply = None
                 else:
                     raise
-
-            if reply is not None:
-                logger.info(f"response: {reply}")
-            else:
-                logger.info("No reply from device")
 
             time.sleep(0.1)
 
